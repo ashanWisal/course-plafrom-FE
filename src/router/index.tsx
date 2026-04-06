@@ -1,13 +1,18 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
+import { lazy, Suspense } from "react";
 import { useAppSelector } from "../store/hooks";
-import RegisterPage from "../pages/RegisterPage";
 import { UserRole } from "../enums/user.enum";
-import LoginPage from "../pages/LoginPage";
-import CourseCatalogPage from "../pages/CourseCatalogPage";
-import CourseDetailPage from "../pages/CourseDetailPage";
-import LearnerDashboardPage from "../pages/LearnerDashboardPage";
-import MentorDashboardPage from "../pages/MentorDashboardPage";
-import UploadCoursePage from "../pages/UploadCoursePage";
+
+// Lazy loaded pages
+const RegisterPage = lazy(() => import("../pages/RegisterPage"));
+const LoginPage = lazy(() => import("../pages/LoginPage"));
+const CourseCatalogPage = lazy(() => import("../pages/CourseCatalogPage"));
+const CourseDetailPage = lazy(() => import("../pages/CourseDetailPage"));
+const LearnerDashboardPage = lazy(
+  () => import("../pages/LearnerDashboardPage"),
+);
+const MentorDashboardPage = lazy(() => import("../pages/MentorDashboardPage"));
+const UploadCoursePage = lazy(() => import("../pages/UploadCoursePage"));
 
 const ProtectedRoute = ({
   children,
@@ -23,32 +28,69 @@ const ProtectedRoute = ({
 };
 
 export const router = createBrowserRouter([
-    { path: '/', element: <CourseCatalogPage /> },
-  { path: "/register", element: <RegisterPage /> },
-  { path: "/login", element: <LoginPage /> },
-    { path: '/courses/:id', element: <CourseDetailPage /> },
-    {
-      path: '/dashboard/mentor',
-      element: (
-        <ProtectedRoute role="mentor">
-          <MentorDashboardPage />
-        </ProtectedRoute>
-      ),
-    },
-    {
-      path: '/dashboard/learner',
-      element: (
-        <ProtectedRoute role={UserRole.LEARNER}>
-          <LearnerDashboardPage />
-        </ProtectedRoute>
-      ),
-    },
-    {
-      path: '/courses/upload',
-      element: (
-        <ProtectedRoute role={UserRole.MENTOR}>
+  {
+    path: "/",
+    element: (
+      <Suspense fallback={null}>
+        <CourseCatalogPage />
+      </Suspense>
+    ),
+  },
+  {
+    path: "/register",
+    element: (
+      <Suspense fallback={null}>
+        <RegisterPage />
+      </Suspense>
+    ),
+  },
+  {
+    path: "/login",
+    element: (
+      <Suspense fallback={null}>
+        <LoginPage />
+      </Suspense>
+    ),
+  },
+  // ⚠️ Static route BEFORE dynamic — fixes your /courses/upload conflict
+  {
+    path: "/courses/upload",
+    element: (
+      <ProtectedRoute role={UserRole.MENTOR}>
+        <Suspense fallback={null}>
           <UploadCoursePage />
-        </ProtectedRoute>
-      ),
-    },
+        </Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/courses/:id",
+    element: (
+      <Suspense fallback={null}>
+        <CourseDetailPage />
+      </Suspense>
+    ),
+  },
+  {
+    path: "/dashboard/mentor",
+    element: (
+      <ProtectedRoute role={UserRole.MENTOR}>
+        {" "}
+        {/* Fixed: was raw string "mentor" */}
+        <Suspense fallback={null}>
+          <MentorDashboardPage />
+        </Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/dashboard/learner",
+    element: (
+      <ProtectedRoute role={UserRole.LEARNER}>
+        <Suspense fallback={null}>
+          <LearnerDashboardPage />
+        </Suspense>
+      </ProtectedRoute>
+    ),
+  },
 ]);
